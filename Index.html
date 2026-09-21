@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SMA Crossover Trading Strategy</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card: #1e293b;
+      --text: #e2e8f0;
+      --accent: #38bdf8;
+      --green: #22c55e;
+      --red: #ef4444;
+      --muted: #94a3b8;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      padding: 20px;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+    h1 { font-size: 1.8rem; margin-bottom: 6px; }
+    .subtitle { color: var(--muted); margin-bottom: 24px; }
+    .card {
+      background: var(--card);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    }
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      align-items: end;
+    }
+    .control-group label {
+      display: block;
+      font-size: 0.85rem;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+    input[type="number"] {
+      background: #0f172a;
+      border: 1px solid #334155;
+      color: var(--text);
+      padding: 8px 12px;
+      border-radius: 8px;
+      width: 90px;
+      font-size: 1rem;
+    }
+    button {
+      background: var(--accent);
+      color: #0f172a;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+    button:hover { opacity: 0.9; }
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 12px;
+      margin-top: 16px;
+    }
+    .metric {
+      background: #0f172a;
+      padding: 12px;
+      border-radius: 8px;
+      text-align: center;
+    }
+    .metric .value { font-size: 1.4rem; font-weight: 700; }
+    .metric .label { font-size: 0.8rem; color: var(--muted); }
+    .positive { color: var(--green); }
+    .negative { color: var(--red); }
+    canvas { max-height: 420px; }
+    .legend-note {
+      font-size: 0.85rem;
+      color: var(--muted);
+      margin-top: 12px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+    }
+    th, td {
+      padding: 10px 12px;
+      text-align: left;
+      border-bottom: 1px solid #334155;
+    }
+    th { color: var(--muted); font-weight: 500; }
+    .buy { color: var(--green); font-weight: 600; }
+    .sell { color: var(--red); font-weight: 600; }
+    .explanation {
+      font-size: 0.95rem;
+      color: #cbd5e1;
+    }
+    .explanation ul { margin: 10px 0 0 20px; }
+  </style>
+</head>
+<body>
+  <h1>SMA Crossover Trading Strategy</h1>
+  <p class="subtitle">Classic dual moving-average crossover system with simulated price data</p>
+
+  <div class="card">
+    <div class="explanation">
+      <strong>How it works:</strong>
+      <ul>
+        <li><strong>Buy</strong> when the short SMA crosses <em>above</em> the long SMA (bullish crossover)</li>
+        <li><strong>Sell</strong> when the short SMA crosses <em>below</em> the long SMA (bearish crossover)</li>
+        <li>This is a trend-following strategy. It works best in trending markets and can produce false signals in sideways markets.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="controls">
+      <div class="control-group">
+        <label>Short SMA Period</label>
+        <input type="number" id="shortPeriod" value="10" min="2" max="50">
+      </div>
+      <div class="control-group">
+        <label>Long SMA Period</label>
+        <input type="number" id="longPeriod" value="30" min="5" max="100">
+      </div>
+      <div class="control-group">
+        <label>Data Points</label>
+        <input type="number" id="dataPoints" value="200" min="50" max="500">
+      </div>
+      <button onclick="runStrategy()">Run Strategy</button>
+    </div>
+
+    <div class="metrics" id="metrics">
+      <!-- filled by JS -->
+    </div>
+  </div>
+
+  <div class="card">
+    <canvas id="priceChart"></canvas>
+    <p class="legend-note">
+      Blue = Price • Cyan = Short SMA • Orange = Long SMA • Green ▲ = Buy • Red ▼ = Sell
+    </p>
+  </div>
+
+  <div class="card">
+    <h3 style="margin-bottom:12px;">Trade Log</h3>
+    <div style="overflow-x:auto;">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Type</th>
+            <th>Bar</th>
+            <th>Price</th>
+            <th>P&L</th>
+          </tr>
+        </thead>
+        <tbody id="tradeLog"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    let chart = null;
+
+    // Generate realistic-looking random walk price data
+    function generatePrices(n) {
+      const prices = [100];
+      for (let i = 1; i < n; i++) {
+        const change = (Math.random() - 0.48) * 2.2; // slight upward bias
+        prices.push(Math.max(10, prices[i-1] + change));
+      }
+      return prices;
+    }
+
+    // Simple Moving Average
+    function sma(data, period) {
+      const result = new Array(data.length).fill(null);
+      for (let i = period - 1; i < data.length; i++) {
+        let sum = 0;
+        for (let j = 0; j < period; j++) sum += data[i - j];
+        result[i] = sum / period;
+      }
+      return result;
+    }
+
+    // Detect crossovers and generate trades
+    function generateSignals(prices, shortSMA, longSMA) {
+      const signals = [];
+      let position = null; // null | 'long'
+      let entryPrice = 0;
+      let entryBar = 0;
+
+      for (let i = 1; i < prices.length; i++) {
+        if (shortSMA[i] === null || longSMA[i] === null) continue;
+
+        const prevShort = shortSMA[i-1];
+        const prevLong = longSMA[i-1];
+        const currShort = shortSMA[i];
+        const currLong = longSMA[i];
+
+        // Bullish crossover
+        if (prevShort <= prevLong && currShort > currLong && position === null) {
+          position = 'long';
+          entryPrice = prices[i];
+          entryBar = i;
+          signals.push({ type: 'BUY', bar: i, price: prices[i], pnl: null });
+        }
+        // Bearish crossover
+        else if (prevShort >= prevLong && currShort < currLong && position === 'long') {
+          const pnl = prices[i] - entryPrice;
+          signals.push({ type: 'SELL', bar: i, price: prices[i], pnl });
+          position = null;
+        }
+      }
+
+      // Close any open position at the end
+      if (position === 'long') {
+        const last = prices.length - 1;
+        const pnl = prices[last] - entryPrice;
+        signals.push({ type: 'SELL (EOD)', bar: last, price: prices[last], pnl });
+      }
+
+      return signals;
+    }
+
+    function runStrategy() {
+      const shortP = parseInt(document.getElementById('shortPeriod').value) || 10;
+      const longP = parseInt(document.getElementById('longPeriod').value) || 30;
+      const n = parseInt(document.getElementById('dataPoints').value) || 200;
+
+      if (shortP >= longP) {
+        alert('Short period must be smaller than Long period');
+        return;
+      }
+
+      const prices = generatePrices(n);
+      const shortSMA = sma(prices, shortP);
+      const longSMA = sma(prices, longP);
+      const signals = generateSignals(prices, shortSMA, longSMA);
+
+      // Metrics
+      const closedTrades = signals.filter(s => s.pnl !== null);
+      const wins = closedTrades.filter(t => t.pnl > 0).length;
+      const totalPnl = closedTrades.reduce((sum, t) => sum + t.pnl, 0);
+      const winRate = closedTrades.length ? (wins / closedTrades.length * 100).toFixed(1) : 0;
+
+      document.getElementById('metrics').innerHTML = `
+        <div class="metric">
+          <div class="value">${closedTrades.length}</div>
+          <div class="label">Closed Trades</div>
+        </div>
+        <div class="metric">
+          <div class="value">${winRate}%</div>
+          <div class="label">Win Rate</div>
+        </div>
+        <div class="metric">
+          <div class="value ${totalPnl >= 0 ? 'positive' : 'negative'}">
+            ${totalPnl >= 0 ? '+' : ''}${totalPnl.toFixed(2)}
+          </div>
+          <div class="label">Net P&L</div>
+        </div>
+        <div class="metric">
+          <div class="value">${shortP} / ${longP}</div>
+          <div class="label">SMA Periods</div>
+        </div>
+      `;
+
+      // Trade log
+      const tbody = document.getElementById('tradeLog');
+      tbody.innerHTML = signals.map((s, i) => `
+        <tr>
+          <td>${i + 1}</td>
+          <td class="${s.type.startsWith('BUY') ? 'buy' : 'sell'}">${s.type}</td>
+          <td>${s.bar}</td>
+          <td>${s.price.toFixed(2)}</td>
+          <td class="${s.pnl === null ? '' : (s.pnl >= 0 ? 'positive' : 'negative')}">
+            ${s.pnl === null ? '—' : (s.pnl >= 0 ? '+' : '') + s.pnl.toFixed(2)}
+          </td>
+        </tr>
+      `).join('');
+
+      // Chart data
+      const labels = prices.map((_, i) => i);
+      const buyPoints = signals.filter(s => s.type.startsWith('BUY')).map(s => ({ x: s.bar, y: s.price }));
+      const sellPoints = signals.filter(s => s.type.startsWith('SELL')).map(s => ({ x: s.bar, y: s.price }));
+
+      if (chart) chart.destroy();
+
+      const ctx = document.getElementById('priceChart').getContext('2d');
+      chart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [
+            {
+              label: 'Price',
+              data: prices,
+              borderColor: '#38bdf8',
+              borderWidth: 2,
+              pointRadius: 0,
+              tension: 0.1
+            },
+            {
+              label: `SMA ${shortP}`,
+              data: shortSMA,
+              borderColor: '#22d3ee',
+              borderWidth: 1.5,
+              pointRadius: 0,
+              borderDash: [4, 4]
+            },
+            {
+              label: `SMA ${longP}`,
+              data: longSMA,
+              borderColor: '#fb923c',
+              borderWidth: 1.5,
+              pointRadius: 0
+            },
+            {
+              label: 'Buy',
+              data: buyPoints,
+              type: 'scatter',
+              backgroundColor: '#22c55e',
+              pointStyle: 'triangle',
+              pointRadius: 8,
+              showLine: false
+            },
+            {
+              label: 'Sell',
+              data: sellPoints,
+              type: 'scatter',
+              backgroundColor: '#ef4444',
+              pointStyle: 'triangle',
+              rotation: 180,
+              pointRadius: 8,
+              showLine: false
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: { labels: { color: '#94a3b8' } },
+            tooltip: {
+              callbacks: {
+                label: ctx => {
+                  if (ctx.dataset.label === 'Buy' || ctx.dataset.label === 'Sell') {
+                    return `${ctx.dataset.label}: ${ctx.parsed.y.toFixed(2)}`;
+                  }
+                  return `${ctx.dataset.label}: ${ctx.parsed.y?.toFixed(2) ?? '—'}`;
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              title: { display: true, text: 'Bar', color: '#94a3b8' },
+              ticks: { color: '#64748b' },
+              grid: { color: '#1e293b' }
+            },
+            y: {
+              title: { display: true, text: 'Price', color: '#94a3b8' },
+              ticks: { color: '#64748b' },
+              grid: { color: '#1e293b' }
+            }
+          }
+        }
+      });
+    }
+
+    // Run on load
+    runStrategy();
+  </script>
+</body>
+</html>
