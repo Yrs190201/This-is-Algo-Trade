@@ -1,386 +1,227 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SMA Crossover Trading Strategy</title>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <style>
-    :root {
-      --bg: #0f172a;
-      --card: #1e293b;
-      --text: #e2e8f0;
-      --accent: #38bdf8;
-      --green: #22c55e;
-      --red: #ef4444;
-      --muted: #94a3b8;
-    }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: 'Segoe UI', system-ui, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      line-height: 1.5;
-      padding: 20px;
-      max-width: 1100px;
-      margin: 0 auto;
-    }
-    h1 { font-size: 1.8rem; margin-bottom: 6px; }
-    .subtitle { color: var(--muted); margin-bottom: 24px; }
-    .card {
-      background: var(--card);
-      border-radius: 12px;
-      padding: 20px;
-      margin-bottom: 20px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-    }
-    .controls {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 16px;
-      align-items: end;
-    }
-    .control-group label {
-      display: block;
-      font-size: 0.85rem;
-      color: var(--muted);
-      margin-bottom: 4px;
-    }
-    input[type="number"] {
-      background: #0f172a;
-      border: 1px solid #334155;
-      color: var(--text);
-      padding: 8px 12px;
-      border-radius: 8px;
-      width: 90px;
-      font-size: 1rem;
-    }
-    button {
-      background: var(--accent);
-      color: #0f172a;
-      border: none;
-      padding: 10px 20px;
-      border-radius: 8px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: opacity 0.2s;
-    }
-    button:hover { opacity: 0.9; }
-    .metrics {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-      gap: 12px;
-      margin-top: 16px;
-    }
-    .metric {
-      background: #0f172a;
-      padding: 12px;
-      border-radius: 8px;
-      text-align: center;
-    }
-    .metric .value { font-size: 1.4rem; font-weight: 700; }
-    .metric .label { font-size: 0.8rem; color: var(--muted); }
-    .positive { color: var(--green); }
-    .negative { color: var(--red); }
-    canvas { max-height: 420px; }
-    .legend-note {
-      font-size: 0.85rem;
-      color: var(--muted);
-      margin-top: 12px;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.9rem;
-    }
-    th, td {
-      padding: 10px 12px;
-      text-align: left;
-      border-bottom: 1px solid #334155;
-    }
-    th { color: var(--muted); font-weight: 500; }
-    .buy { color: var(--green); font-weight: 600; }
-    .sell { color: var(--red); font-weight: 600; }
-    .explanation {
-      font-size: 0.95rem;
-      color: #cbd5e1;
-    }
-    .explanation ul { margin: 10px 0 0 20px; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>FinEase — Smart Finance & Accounting</title>
+<style>
+:root{--primary:#2563eb;--primary2:#1d4ed8;--accent:#60a5fa;--bg:#f4f8ff;--card:#fff;--text:#172033;--muted:#64748b;--line:#dbe5f1;--side:#0f2747;--side2:#173d6b;--good:#16a34a;--warn:#f59e0b;--bad:#dc2626;--shadow:0 10px 28px rgba(15,39,71,.08)}
+*{box-sizing:border-box;margin:0;padding:0}body{font-family:Inter,Segoe UI,Arial,sans-serif;background:var(--bg);color:var(--text);transition:.2s}button,input,select,textarea{font:inherit}.app{display:flex;min-height:100vh}.sidebar{width:250px;background:var(--side);color:#fff;position:fixed;inset:0 auto 0 0;overflow:auto;z-index:20}.brand{padding:24px 22px;font-size:24px;font-weight:900;border-bottom:1px solid #ffffff12}.brand span{color:#93c5fd}.workspace{padding:18px 20px;border-bottom:1px solid #ffffff12}.workspace small{color:#9aa4c0}.workspace b{display:block;margin:5px 0}.nav{padding:12px}.section{font-size:10px;letter-spacing:1.3px;text-transform:uppercase;color:#7f89a7;padding:15px 10px 7px}.nav button{width:100%;border:0;background:none;color:#c8cde0;text-align:left;padding:11px 12px;border-radius:9px;cursor:pointer;margin:2px 0}.nav button:hover,.nav button.active{background:var(--side2);color:#fff}.nav button.active{box-shadow:inset 3px 0 #60a5fa}.main{margin-left:250px;width:calc(100% - 250px)}.topbar{height:72px;background:var(--card);border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 28px;position:sticky;top:0;z-index:10}.search{width:min(430px,45vw);border:1px solid var(--line);border-radius:12px;padding:11px 14px;background:var(--bg);outline:0}.topright{display:flex;gap:16px;align-items:center}.avatar{width:38px;height:38px;border-radius:50%;background:var(--primary);color:#fff;display:grid;place-items:center;font-weight:800}.iconbtn{border:1px solid var(--line);background:var(--card);border-radius:10px;padding:9px;cursor:pointer}.content{padding:28px}.page{display:none}.page.active{display:block}.title{display:flex;justify-content:space-between;align-items:center;margin-bottom:22px}.title h1{font-size:27px}.title p{font-size:13px;color:var(--muted);margin-top:5px}.btn{border:0;border-radius:10px;padding:10px 15px;font-weight:700;cursor:pointer}.primary{background:var(--primary);color:#fff}.light{background:#eef0ff;color:#4038a8}.danger{background:#fee2e2;color:#991b1b}.grid{display:grid;gap:18px}.kpis{grid-template-columns:repeat(4,1fr)}.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px;box-shadow:var(--shadow)}.kpi{position:relative}.kpi small{color:var(--muted)}.kpi h2{font-size:28px;margin:8px 0}.trend{font-size:12px;color:var(--good)}.kicon{position:absolute;right:18px;top:18px;background:#eef0ff;color:var(--primary);width:40px;height:40px;border-radius:11px;display:grid;place-items:center}.twocol{grid-template-columns:1.8fr 1fr;margin-top:20px}.three{grid-template-columns:repeat(3,1fr)}.head{display:flex;justify-content:space-between;align-items:center;margin-bottom:15px}.head span{font-size:11px;color:var(--muted)}.bars{height:250px;display:flex;align-items:end;gap:15px;padding:10px}.barcol{height:100%;flex:1;display:flex;align-items:center;justify-content:end;flex-direction:column;gap:6px}.bar{width:65%;min-height:8px;border-radius:8px 8px 2px 2px;background:var(--primary)}.bar2{width:65%;min-height:4px;border-radius:8px 8px 2px 2px;background:#bfdbfe}.barlabel{font-size:11px;color:var(--muted)}.progress{height:8px;background:#e7e9f1;border-radius:20px;overflow:hidden}.progress i{display:block;height:100%;background:var(--primary)}.quick{grid-template-columns:repeat(4,1fr);margin-top:20px}.quick button{padding:16px;text-align:left;border:1px solid var(--line);background:var(--card);border-radius:12px;cursor:pointer}.quick button:hover{border-color:#60a5fa;transform:translateY(-1px)}.quick b{display:block;margin-bottom:5px}.quick small{color:var(--muted)}table{width:100%;border-collapse:collapse;font-size:13px}th,td{text-align:left;padding:13px;border-bottom:1px solid var(--line)}th{color:var(--muted);font-size:11px;background:#fafbfe}.status{padding:5px 8px;border-radius:99px;font-size:10px;font-weight:800}.ok{background:#dcfce7;color:#166534}.pending{background:#fef3c7;color:#92400e}.overdue{background:#fee2e2;color:#991b1b}.form{grid-template-columns:repeat(3,1fr)}.field{display:flex;flex-direction:column;gap:6px}.field label{font-size:11px;font-weight:800;color:var(--muted)}input,select,textarea{width:100%;border:1px solid var(--line);border-radius:9px;padding:10px;background:var(--card);color:var(--text);outline:none}textarea{min-height:90px}.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--primary)}.actions{display:flex;gap:9px;margin-top:17px;flex-wrap:wrap}.notice{padding:13px 15px;border-radius:11px;background:#eef5ff;color:#2452a3;font-size:12px;margin-bottom:16px}.ai{background:#0f2747;color:#fff}.ai .muted{color:#b7bfd8}.ai-chip{display:inline-block;background:#ffffff18;border:1px solid #ffffff20;padding:6px 9px;border-radius:99px;font-size:10px;margin:4px}.modalbg{display:none;position:fixed;inset:0;background:#0008;z-index:100;align-items:center;justify-content:center;padding:20px}.modalbg.show{display:flex}.modal{background:var(--card);width:min(760px,100%);max-height:90vh;overflow:auto;border-radius:18px;padding:23px;box-shadow:0 25px 80px #0005}.modalhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}.close{border:0;background:#eef0f5;border-radius:8px;width:32px;height:32px;cursor:pointer}.invoice-total{font-size:30px;font-weight:900;color:var(--primary);text-align:right}.footer{text-align:center;color:#98a0b3;padding:28px;font-size:11px}.dark{--bg:#071426;--card:#0d1d33;--text:#edf6ff;--muted:#9fb3cc;--line:#203b5c;--side:#06101f;--side2:#10325a;--shadow:0 12px 35px #0004}.dark th{background:#171e32}.dark .search{background:#0e1425}.dark .light{background:#25294e;color:#cdd0ff}.dark .progress{background:#293148}
+@media(max-width:1050px){.kpis{grid-template-columns:repeat(2,1fr)}.twocol{grid-template-columns:1fr}.quick{grid-template-columns:repeat(2,1fr)}.form{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:720px){.sidebar{width:68px}.brand{font-size:0;text-align:center;padding:23px 5px}.brand:after{content:'F';font-size:24px;color:#93c5fd}.workspace,.section{display:none}.nav button{font-size:0;text-align:center}.nav button:first-letter{font-size:18px}.main{margin-left:68px;width:calc(100% - 68px)}.topbar{padding:0 12px}.search{width:52%;font-size:11px}.content{padding:16px}.kpis,.quick,.form,.three{grid-template-columns:1fr}.title{align-items:flex-start;gap:10px;flex-direction:column}.twocol{grid-template-columns:1fr}.card{padding:15px;overflow-x:auto}table{min-width:600px}.topright span:first-child{display:none}}
+</style>
 </head>
 <body>
-  <h1>SMA Crossover Trading Strategy</h1>
-  <p class="subtitle">Classic dual moving-average crossover system with simulated price data</p>
+<div class="app">
+<aside class="sidebar">
+ <div class="brand">Fin<span>Ease</span></div>
+ <div class="workspace"><small>Finance Workspace</small><b>FinEase Solutions</b><small>Smart Finance & Accounting</small></div>
+ <nav class="nav">
+  <div class="section">Main</div>
+  <button class="active" onclick="showPage('dashboard',this)">▣ Dashboard</button>
+  <button onclick="showPage('customers',this)">♙ Customers</button>
+  <button onclick="showPage('invoices',this)">▤ Invoices</button>
+  <button onclick="showPage('expenses',this)">₹ Expenses</button>
+  <button onclick="showPage('payments',this)">✓ Payments</button>
+  <div class="section">Accounting</div>
+  <button onclick="showPage('trialBalance',this)">⚖ Trial Balance</button>
+  <button onclick="showPage('profitLoss',this)">▥ Profit & Loss</button>
+  <button onclick="showPage('balanceSheet',this)">▣ Balance Sheet</button>
+  <button onclick="showPage('ledger',this)">▦ Ledger</button>
+  <button onclick="showPage('reports',this)">▥ Reports</button>
+  <button onclick="showPage('automation',this)">✦ AI Automation</button>
+  <div class="section">Workspace</div>
+  <button onclick="showPage('documents',this)">▧ Documents</button>
+  <button onclick="showPage('settings',this)">⚙ Settings</button>
+ </nav>
+</aside>
+<main class="main">
+<header class="topbar"><input class="search" id="globalSearch" placeholder="Search customers, invoices, payments..." oninput="globalSearch()"><div class="topright"><button class="iconbtn" onclick="toggleDark()" title="Dark mode">☾</button><span>₹ INR</span><div class="avatar">AE</div></div></header>
+<div class="content">
+<section id="dashboard" class="page active">
+ <div class="title"><div><h1>Financial Overview</h1><p>Smart accounting, invoicing and finance automation in one workspace.</p></div><button class="btn primary" onclick="openInvoice()">+ Create Invoice</button></div>
+ 
+ <div class="card" style="margin-bottom:20px">
+   <div class="head"><h3>Live Financial Calculation</h3><span>Based on demo transactions</span></div>
+   <div class="grid three">
+     <div><small style="color:var(--muted)">Gross Profit</small><h2 id="calcGrossProfit">₹0</h2></div>
+     <div><small style="color:var(--muted)">Profit Margin</small><h2 id="calcProfitMargin">0%</h2></div>
+     <div><small style="color:var(--muted)">Net Cash Position</small><h2 id="calcCashPosition">₹0</h2></div>
+   </div>
+   <div class="notice" style="margin-top:15px;margin-bottom:0">
+     FinEase automatically calculates these values from the income, expense, invoice and payment records in this prototype.
+   </div>
+ </div>
+<div class="grid kpis">
+  <div class="card kpi"><small>Total Revenue</small><h2 id="revenue">₹8.42L</h2><div class="trend">↑ 12.8% this month</div><div class="kicon">↗</div></div>
+  <div class="card kpi"><small>Outstanding</small><h2 id="outstanding">₹1.27L</h2><div class="trend">8 invoices pending</div><div class="kicon">◷</div></div>
+  <div class="card kpi"><small>Expenses</small><h2 id="dashExpenses">₹3.18L</h2><div class="trend">↓ 4.2% vs last month</div><div class="kicon">₹</div></div>
+  <div class="card kpi"><small>Net Profit</small><h2 id="dashProfit">₹5.24L</h2><div class="trend">62.2% margin</div><div class="kicon">✓</div></div>
+ </div>
+ <div class="grid twocol">
+  <div class="card"><div class="head"><h3>Cash Flow</h3><span>Jan–Jun 2026</span></div><div class="bars">
+   <div class="barcol"><div class="bar" style="height:55%"></div><div class="bar2" style="height:22%"></div><span class="barlabel">Jan</span></div><div class="barcol"><div class="bar" style="height:63%"></div><div class="bar2" style="height:28%"></div><span class="barlabel">Feb</span></div><div class="barcol"><div class="bar" style="height:58%"></div><div class="bar2" style="height:31%"></div><span class="barlabel">Mar</span></div><div class="barcol"><div class="bar" style="height:72%"></div><div class="bar2" style="height:26%"></div><span class="barlabel">Apr</span></div><div class="barcol"><div class="bar" style="height:80%"></div><div class="bar2" style="height:34%"></div><span class="barlabel">May</span></div><div class="barcol"><div class="bar" style="height:88%"></div><div class="bar2" style="height:30%"></div><span class="barlabel">Jun</span></div>
+  </div><div style="font-size:11px;color:var(--muted)">▉ Revenue &nbsp;&nbsp; ▉ Expenses</div></div>
+  <div class="card"><div class="head"><h3>Financial Health</h3><span>Current period</span></div><p style="font-size:12px;margin:14px 0 6px">Collection rate <b style="float:right">92%</b></p><div class="progress"><i style="width:92%"></i></div><p style="font-size:12px;margin:18px 0 6px">Budget utilisation <b style="float:right">72%</b></p><div class="progress"><i style="width:72%"></i></div><p style="font-size:12px;margin:18px 0 6px">Reconciliation <b style="float:right">84%</b></p><div class="progress"><i style="width:84%"></i></div></div>
+ </div>
+ <div class="grid quick"><button onclick="openInvoice()"><b>🧾 Create Invoice</b><small>Generate and record a customer invoice.</small></button><button onclick="addExpense()"><b>＋ Record Expense</b><small>Capture business expenses instantly.</small></button><button onclick="showPage('automation')"><b>✦ Run AI Check</b><small>Find unusual transactions and reminders.</small></button><button onclick="showPage('reports')"><b>▥ View Reports</b><small>Review revenue, profit and receivables.</small></button></div>
+ <div class="card" style="margin-top:20px"><div class="head"><h3>Recent Transactions</h3><span>Live prototype records</span></div><table id="transactionTable"><thead><tr><th>Date</th><th>Reference</th><th>Party</th><th>Type</th><th>Amount</th><th>Status</th></tr></thead><tbody>
+ <tr><td>22 Sep</td><td>INV-1024</td><td>Acme Retail</td><td>Invoice</td><td>₹38,400</td><td><span class="status pending">Pending</span></td></tr><tr><td>21 Sep</td><td>PAY-882</td><td>Northstar Labs</td><td>Payment</td><td>₹24,500</td><td><span class="status ok">Received</span></td></tr><tr><td>20 Sep</td><td>EXP-421</td><td>Office Supplies</td><td>Expense</td><td>₹8,650</td><td><span class="status ok">Recorded</span></td></tr></tbody></table></div>
+</section>
+<section id="customers" class="page"><div class="title"><div><h1>Customers</h1><p>Manage customer balances and transaction history.</p></div><button class="btn primary" onclick="addCustomer()">+ Add Customer</button></div><div class="card"><table id="customerTable"><thead><tr><th>Customer</th><th>Email</th><th>Invoices</th><th>Outstanding</th><th>Status</th></tr></thead><tbody><tr><td>Acme Retail</td><td>accounts@acmeretail.com</td><td>18</td><td>₹38,400</td><td><span class="status pending">Payment Due</span></td></tr><tr><td>Northstar Labs</td><td>finance@northstarlabs.com</td><td>12</td><td>₹0</td><td><span class="status ok">Clear</span></td></tr><tr><td>Urban Mart</td><td>billing@urbanmart.com</td><td>9</td><td>₹16,900</td><td><span class="status pending">Payment Due</span></td></tr></tbody></table></div></section>
+<section id="invoices" class="page"><div class="title"><div><h1>Invoices</h1><p>Create, search and track customer invoices.</p></div><button class="btn primary" onclick="openInvoice()">+ New Invoice</button></div><div class="card"><table id="invoiceTable"><thead><tr><th>Invoice</th><th>Customer</th><th>Date</th><th>Due</th><th>Amount</th><th>Status</th></tr></thead><tbody><tr><td>INV-1024</td><td>Acme Retail</td><td>22 Sep 2026</td><td>07 Oct 2026</td><td>₹38,400</td><td><span class="status pending">Pending</span></td></tr><tr><td>INV-1023</td><td>Northstar Labs</td><td>18 Sep 2026</td><td>03 Oct 2026</td><td>₹24,500</td><td><span class="status ok">Paid</span></td></tr></tbody></table></div></section>
+<section id="expenses" class="page"><div class="title"><div><h1>Expenses</h1><p>Record and categorise business spending.</p></div><button class="btn primary" onclick="addExpense()">+ Record Expense</button></div><div class="card"><table id="expenseTable"><thead><tr><th>Date</th><th>Category</th><th>Vendor</th><th>Amount</th><th>Status</th></tr></thead><tbody><tr><td>20 Sep</td><td>Office Supplies</td><td>Paper & Co.</td><td>₹8,650</td><td><span class="status ok">Recorded</span></td></tr><tr><td>18 Sep</td><td>Software</td><td>CloudDesk</td><td>₹12,800</td><td><span class="status ok">Recorded</span></td></tr></tbody></table></div></section>
+<section id="payments" class="page"><div class="title"><div><h1>Payments</h1><p>Track incoming customer payments and outgoing settlements.</p></div></div><div class="grid three"><div class="card"><small>Received this month</small><h2>₹7.16L</h2></div><div class="card"><small>Outgoing</small><h2>₹2.84L</h2></div><div class="card"><small>Reconciliation</small><h2>84%</h2></div></div></section>
+<section id="ledger" class="page"><div class="title"><div><h1>General Ledger</h1><p>View illustrative double-entry accounting records.</p></div><button class="btn light" onclick="downloadCSV()">Export CSV</button></div><div class="card"><table><thead><tr><th>Date</th><th>Voucher</th><th>Account</th><th>Debit</th><th>Credit</th></tr></thead><tbody><tr><td>22 Sep</td><td>JV-2201</td><td>Accounts Receivable</td><td>₹38,400</td><td>—</td></tr><tr><td>22 Sep</td><td>JV-2201</td><td>Sales Revenue</td><td>—</td><td>₹38,400</td></tr><tr><td>21 Sep</td><td>JV-2200</td><td>Bank</td><td>₹24,500</td><td>—</td></tr><tr><td>21 Sep</td><td>JV-2200</td><td>Accounts Receivable</td><td>—</td><td>₹24,500</td></tr></tbody></table></div></section>
+<section id="reports" class="page"><div class="title"><div><h1>Reports</h1><p>Management-ready financial summaries.</p></div><button class="btn primary" onclick="alert('Report generated successfully.')">Generate Report</button></div><div class="grid three"><div class="card"><small>Revenue</small><h2 id="reportRevenue">₹0</h2></div><div class="card"><small>Expenses</small><h2 id="reportExpenses">₹0</h2></div><div class="card"><small>Net Profit</small><h2 id="reportProfit">₹0</h2></div></div><div class="card" style="margin-top:20px"><h3>Available Reports</h3><div class="actions"><button class="btn light" onclick="alert('Receivables aging report prepared.')">Receivables Aging</button><button class="btn light" onclick="alert('Profit & Loss report prepared.')">Profit & Loss</button><button class="btn light" onclick="alert('Expense analysis prepared.')">Expense Analysis</button></div></div></section>
+<section id="automation" class="page"><div class="title"><div><h1>AI & Automation</h1><p>Assistive finance workflows designed for the FinEase prototype.</p></div><button class="btn primary" onclick="runAI()">✦ Run AI Check</button></div><div class="card ai"><h2>FinEase Intelligence</h2><p class="muted" style="margin:8px 0 18px">Review transactions, identify follow-ups and suggest routine accounting actions.</p><span class="ai-chip">Invoice reminders</span><span class="ai-chip">Expense categorisation</span><span class="ai-chip">Anomaly checks</span><span class="ai-chip">Cash-flow insights</span><div id="aiResult" style="margin-top:20px;padding:15px;border-radius:12px;background:#ffffff0d">Click <b>Run AI Check</b> to analyse the demo records.</div></div><div class="grid three" style="margin-top:20px"><div class="card"><h3>3</h3><small>Invoices needing follow-up</small></div><div class="card"><h3>2</h3><small>Transactions to review</small></div><div class="card"><h3>₹42,600</h3><small>Potential overdue amount</small></div></div></section>
+<section id="documents" class="page"><div class="title"><div><h1>Documents</h1><p>Centralise invoices, receipts and finance records.</p></div><button class="btn primary" onclick="alert('Document upload opened.')">Upload</button></div><div class="card"><table><thead><tr><th>Document</th><th>Category</th><th>Reference</th><th>Status</th></tr></thead><tbody><tr><td>Invoice INV-1024</td><td>Sales</td><td>Acme Retail</td><td><span class="status ok">Verified</span></td></tr><tr><td>Receipt EXP-421</td><td>Expense</td><td>Office Supplies</td><td><span class="status ok">Filed</span></td></tr></tbody></table></div></section>
 
-  <div class="card">
-    <div class="explanation">
-      <strong>How it works:</strong>
-      <ul>
-        <li><strong>Buy</strong> when the short SMA crosses <em>above</em> the long SMA (bullish crossover)</li>
-        <li><strong>Sell</strong> when the short SMA crosses <em>below</em> the long SMA (bearish crossover)</li>
-        <li>This is a trend-following strategy. It works best in trending markets and can produce false signals in sideways markets.</li>
-      </ul>
-    </div>
-  </div>
+<section id="trialBalance" class="page">
+ <div class="title"><div><h1>Trial Balance</h1><p>Debit and credit balances calculated from the FinEase demo ledger.</p></div><button class="btn light" onclick="calculateAccounts()">Refresh</button></div>
+ <div class="card">
+  <table id="trialTable"><thead><tr><th>Account</th><th>Debit (₹)</th><th>Credit (₹)</th></tr></thead>
+  <tbody></tbody>
+  <tfoot><tr><th>Total</th><th id="tbDebit">₹0</th><th id="tbCredit">₹0</th></tr></tfoot>
+  </table>
+ </div>
+</section>
 
-  <div class="card">
-    <div class="controls">
-      <div class="control-group">
-        <label>Short SMA Period</label>
-        <input type="number" id="shortPeriod" value="10" min="2" max="50">
-      </div>
-      <div class="control-group">
-        <label>Long SMA Period</label>
-        <input type="number" id="longPeriod" value="30" min="5" max="100">
-      </div>
-      <div class="control-group">
-        <label>Data Points</label>
-        <input type="number" id="dataPoints" value="200" min="50" max="500">
-      </div>
-      <button onclick="runStrategy()">Run Strategy</button>
-    </div>
+<section id="profitLoss" class="page">
+ <div class="title"><div><h1>Profit & Loss</h1><p>Calculated from recorded revenue and operating expenses.</p></div></div>
+ <div class="grid three">
+  <div class="card"><small>Revenue</small><h2 id="plRevenue">₹0</h2></div>
+  <div class="card"><small>Total Expenses</small><h2 id="plExpenses">₹0</h2></div>
+  <div class="card"><small>Net Profit</small><h2 id="plProfit">₹0</h2></div>
+ </div>
+ <div class="card" style="margin-top:20px"><h3>Profitability</h3><div style="margin-top:15px"><div style="display:flex;justify-content:space-between"><span>Profit Margin</span><b id="plMargin">0%</b></div><div class="progress" style="margin-top:8px"><i id="plProgress" style="width:0%"></i></div></div></div>
+</section>
 
-    <div class="metrics" id="metrics">
-      <!-- filled by JS -->
-    </div>
-  </div>
+<section id="balanceSheet" class="page">
+ <div class="title"><div><h1>Balance Sheet</h1><p>Illustrative assets, liabilities and equity based on the demo data.</p></div></div>
+ <div class="grid three">
+  <div class="card"><small>Total Assets</small><h2 id="bsAssets">₹0</h2></div>
+  <div class="card"><small>Total Liabilities</small><h2 id="bsLiabilities">₹0</h2></div>
+  <div class="card"><small>Owner Equity</small><h2 id="bsEquity">₹0</h2></div>
+ </div>
+ <div class="notice" style="margin-top:20px">Assets = Liabilities + Equity. Values are illustrative and update when demo transactions are recorded.</div>
+</section>
 
-  <div class="card">
-    <canvas id="priceChart"></canvas>
-    <p class="legend-note">
-      Blue = Price • Cyan = Short SMA • Orange = Long SMA • Green ▲ = Buy • Red ▼ = Sell
-    </p>
-  </div>
+<section id="settings" class="page"><div class="title"><div><h1>Settings</h1><p>Configure the FinEase workspace.</p></div></div><div class="card"><div class="grid form"><div class="field"><label>Project / Company Name</label><input value="FinEase Solutions"></div><div class="field"><label>Currency</label><select><option>INR — Indian Rupee</option><option>USD — US Dollar</option></select></div><div class="field"><label>Financial Year</label><select><option>2026–27</option><option>2025–26</option></select></div><div class="field"><label>Invoice Prefix</label><input value="INV-"></div><div class="field"><label>Tax Rate (%)</label><input value="18"></div><div class="field"><label>Notifications</label><select><option>Enabled</option><option>Disabled</option></select></div></div><div class="actions"><button class="btn primary" onclick="alert('Settings saved.')">Save Settings</button></div></div></section>
+</div><div class="footer">FinEase — Smart Finance & Accounting Prototype · Academic FinTech Design Model</div>
+</main></div>
 
-  <div class="card">
-    <h3 style="margin-bottom:12px;">Trade Log</h3>
-    <div style="overflow-x:auto;">
-      <table>
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Type</th>
-            <th>Bar</th>
-            <th>Price</th>
-            <th>P&L</th>
-          </tr>
-        </thead>
-        <tbody id="tradeLog"></tbody>
-      </table>
-    </div>
-  </div>
+<div class="modalbg" id="invoiceModal"><div class="modal"><div class="modalhead"><div><h2>Create Invoice</h2><small style="color:var(--muted)">Create a customer invoice and add it to the records.</small></div><button class="close" onclick="closeInvoice()">×</button></div><div class="grid form"><div class="field"><label>Customer</label><input id="invCustomer" placeholder="Customer name"></div><div class="field"><label>Invoice Date</label><input id="invDate" type="date"></div><div class="field"><label>Due Date</label><input id="invDue" type="date"></div><div class="field"><label>Description</label><input id="invDesc" placeholder="Service / product"></div><div class="field"><label>Quantity</label><input id="invQty" type="number" value="1" min="1" oninput="calcInvoice()"></div><div class="field"><label>Unit Price (₹)</label><input id="invPrice" type="number" value="10000" min="0" oninput="calcInvoice()"></div><div class="field"><label>Tax (%)</label><input id="invTax" type="number" value="18" min="0" oninput="calcInvoice()"></div></div><div style="margin-top:20px;padding:15px;background:var(--bg);border-radius:12px"><div style="display:flex;justify-content:space-between;font-size:13px"><span>Subtotal</span><b id="invSub">₹10,000</b></div><div style="display:flex;justify-content:space-between;font-size:13px;margin-top:8px"><span>Tax</span><b id="invTaxAmt">₹1,800</b></div><div class="invoice-total" id="invTotal">₹11,800</div></div><div class="actions"><button class="btn primary" onclick="saveInvoice()">Create Invoice</button><button class="btn light" onclick="closeInvoice()">Cancel</button></div></div></div>
+<script>
 
-  <script>
-    let chart = null;
+const $=id=>document.getElementById(id);
 
-    // Generate realistic-looking random walk price data
-    function generatePrices(n) {
-      const prices = [100];
-      for (let i = 1; i < n; i++) {
-        const change = (Math.random() - 0.48) * 2.2; // slight upward bias
-        prices.push(Math.max(10, prices[i-1] + change));
-      }
-      return prices;
-    }
+const finData = {
+  openingCash: 450000,
+  openingReceivables: 126800,
+  openingPayables: 54200,
+  openingEquity: 522600,
+  revenue: 0,
+  expenses: 0,
+  collections: 0,
+  newReceivables: 0,
+  payables: 0,
+  expenseRows: 0
+};
 
-    // Simple Moving Average
-    function sma(data, period) {
-      const result = new Array(data.length).fill(null);
-      for (let i = period - 1; i < data.length; i++) {
-        let sum = 0;
-        for (let j = 0; j < period; j++) sum += data[i - j];
-        result[i] = sum / period;
-      }
-      return result;
-    }
+function parseMoneyText(v){
+  if(v==null) return 0;
+  return Number(String(v).replace(/[₹,\s]/g,'')) || 0;
+}
 
-    // Detect crossovers and generate trades
-    function generateSignals(prices, shortSMA, longSMA) {
-      const signals = [];
-      let position = null; // null | 'long'
-      let entryPrice = 0;
-      let entryBar = 0;
+function calculateAccounts(){
+  let revenue=0, expenses=0, collections=0, receivables=0, payables=0;
 
-      for (let i = 1; i < prices.length; i++) {
-        if (shortSMA[i] === null || longSMA[i] === null) continue;
+  document.querySelectorAll('#invoiceTable tbody tr').forEach(row=>{
+    const cells=row.querySelectorAll('td');
+    if(!cells.length) return;
+    const amount=parseMoneyText(cells[4]?.innerText);
+    const status=(cells[5]?.innerText||'').toLowerCase();
+    if(status.includes('paid')) collections += amount;
+    else receivables += amount;
+    revenue += amount;
+  });
 
-        const prevShort = shortSMA[i-1];
-        const prevLong = longSMA[i-1];
-        const currShort = shortSMA[i];
-        const currLong = longSMA[i];
+  document.querySelectorAll('#expenseTable tbody tr').forEach(row=>{
+    const cells=row.querySelectorAll('td');
+    if(!cells.length) return;
+    expenses += parseMoneyText(cells[3]?.innerText);
+    payables += parseMoneyText(cells[3]?.innerText);
+  });
 
-        // Bullish crossover
-        if (prevShort <= prevLong && currShort > currLong && position === null) {
-          position = 'long';
-          entryPrice = prices[i];
-          entryBar = i;
-          signals.push({ type: 'BUY', bar: i, price: prices[i], pnl: null });
-        }
-        // Bearish crossover
-        else if (prevShort >= prevLong && currShort < currLong && position === 'long') {
-          const pnl = prices[i] - entryPrice;
-          signals.push({ type: 'SELL', bar: i, price: prices[i], pnl });
-          position = null;
-        }
-      }
+  // Demo opening balances are retained so the statements are meaningful.
+  const totalRevenue = revenue;
+  const totalExpenses = expenses;
+  const profit = totalRevenue-totalExpenses;
+  const cash = finData.openingCash + collections - expenses;
+  const assets = cash + finData.openingReceivables + receivables;
+  const liabilities = finData.openingPayables + payables;
+  const equity = assets-liabilities;
 
-      // Close any open position at the end
-      if (position === 'long') {
-        const last = prices.length - 1;
-        const pnl = prices[last] - entryPrice;
-        signals.push({ type: 'SELL (EOD)', bar: last, price: prices[last], pnl });
-      }
+  const margin = totalRevenue ? (profit/totalRevenue*100) : 0;
 
-      return signals;
-    }
+  setText('dashRevenue', money(totalRevenue));
+  setText('dashExpenses', money(totalExpenses));
+  setText('dashProfit', money(profit));
+  setText('reportRevenue', money(totalRevenue));
+  setText('reportExpenses', money(totalExpenses));
+  setText('reportProfit', money(profit));
+  setText('calcGrossProfit', money(profit));
+  setText('calcProfitMargin', margin.toFixed(1)+'%');
+  setText('calcCashPosition', money(cash));
 
-    function runStrategy() {
-      const shortP = parseInt(document.getElementById('shortPeriod').value) || 10;
-      const longP = parseInt(document.getElementById('longPeriod').value) || 30;
-      const n = parseInt(document.getElementById('dataPoints').value) || 200;
+  setText('plRevenue', money(totalRevenue));
+  setText('plExpenses', money(totalExpenses));
+  setText('plProfit', money(profit));
+  setText('plMargin', margin.toFixed(1)+'%');
+  const progress=$('plProgress'); if(progress) progress.style.width=Math.max(0,Math.min(100,margin))+'%';
 
-      if (shortP >= longP) {
-        alert('Short period must be smaller than Long period');
-        return;
-      }
+  setText('bsAssets', money(assets));
+  setText('bsLiabilities', money(liabilities));
+  setText('bsEquity', money(equity));
 
-      const prices = generatePrices(n);
-      const shortSMA = sma(prices, shortP);
-      const longSMA = sma(prices, longP);
-      const signals = generateSignals(prices, shortSMA, longSMA);
+  const tb=$('trialTable')?.querySelector('tbody');
+  if(tb){
+    tb.innerHTML='';
+    const rows=[
+      ['Cash / Bank',cash,0],
+      ['Accounts Receivable',finData.openingReceivables+receivables,0],
+      ['Expenses',totalExpenses,0],
+      ['Accounts Payable',0,liabilities],
+      ['Sales Revenue',0,totalRevenue],
+      ['Opening Equity',0,finData.openingEquity]
+    ];
+    let debit=0,credit=0;
+    rows.forEach(r=>{
+      debit+=r[1]; credit+=r[2];
+      tb.insertAdjacentHTML('beforeend',`<tr><td>${r[0]}</td><td>${money(r[1])}</td><td>${money(r[2])}</td></tr>`);
+    });
+    setText('tbDebit',money(debit)); setText('tbCredit',money(credit));
+  }
+}
 
-      // Metrics
-      const closedTrades = signals.filter(s => s.pnl !== null);
-      const wins = closedTrades.filter(t => t.pnl > 0).length;
-      const totalPnl = closedTrades.reduce((sum, t) => sum + t.pnl, 0);
-      const winRate = closedTrades.length ? (wins / closedTrades.length * 100).toFixed(1) : 0;
+function setText(id,value){const el=$(id);if(el)el.innerText=value;}
 
-      document.getElementById('metrics').innerHTML = `
-        <div class="metric">
-          <div class="value">${closedTrades.length}</div>
-          <div class="label">Closed Trades</div>
-        </div>
-        <div class="metric">
-          <div class="value">${winRate}%</div>
-          <div class="label">Win Rate</div>
-        </div>
-        <div class="metric">
-          <div class="value ${totalPnl >= 0 ? 'positive' : 'negative'}">
-            ${totalPnl >= 0 ? '+' : ''}${totalPnl.toFixed(2)}
-          </div>
-          <div class="label">Net P&L</div>
-        </div>
-        <div class="metric">
-          <div class="value">${shortP} / ${longP}</div>
-          <div class="label">SMA Periods</div>
-        </div>
-      `;
 
-      // Trade log
-      const tbody = document.getElementById('tradeLog');
-      tbody.innerHTML = signals.map((s, i) => `
-        <tr>
-          <td>${i + 1}</td>
-          <td class="${s.type.startsWith('BUY') ? 'buy' : 'sell'}">${s.type}</td>
-          <td>${s.bar}</td>
-          <td>${s.price.toFixed(2)}</td>
-          <td class="${s.pnl === null ? '' : (s.pnl >= 0 ? 'positive' : 'negative')}">
-            ${s.pnl === null ? '—' : (s.pnl >= 0 ? '+' : '') + s.pnl.toFixed(2)}
-          </td>
-        </tr>
-      `).join('');
+function showPage(id,btn){document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));$(id).classList.add('active');document.querySelectorAll('.nav button').forEach(b=>b.classList.remove('active'));if(btn)btn.classList.add('active');window.scrollTo({top:0,behavior:'smooth'})}
+function toggleDark(){document.body.classList.toggle('dark');localStorage.setItem('f-dark',document.body.classList.contains('dark'))}
+if(localStorage.getItem('f-dark')==='true')document.body.classList.add('dark');
+function globalSearch(){const q=$('globalSearch').value.toLowerCase();document.querySelectorAll('tbody tr').forEach(r=>r.style.display=r.innerText.toLowerCase().includes(q)?'':'none')}
+function money(n){return '₹'+Number(n||0).toLocaleString('en-IN',{maximumFractionDigits:2})}
+function openInvoice(){ $('invoiceModal').classList.add('show'); const d=new Date();$('invDate').value=d.toISOString().slice(0,10); $('invDue').value=new Date(d.getTime()+15*864e5).toISOString().slice(0,10);calcInvoice() }
+function closeInvoice(){$('invoiceModal').classList.remove('show')}
+function calcInvoice(){const q=+$('invQty').value||0,p=+$('invPrice').value||0,t=+$('invTax').value||0,s=q*p,ta=s*t/100; $('invSub').innerText=money(s);$('invTaxAmt').innerText=money(ta);$('invTotal').innerText=money(s+ta)}
+function saveInvoice(){const c=$('invCustomer').value.trim();if(!c){alert('Please enter a customer name.');return}const q=+$('invQty').value||0,p=+$('invPrice').value||0,t=+$('invTax').value||0,total=q*p*(1+t/100),num='INV-'+(1025+document.querySelectorAll('#invoiceTable tbody tr').length-2);const row=document.createElement('tr');row.innerHTML=`<td>${num}</td><td>${c}</td><td>${$('invDate').value}</td><td>${$('invDue').value}</td><td>${money(total)}</td><td><span class="status pending">Pending</span></td>`;$('invoiceTable').querySelector('tbody').appendChild(row);closeInvoice();showPage('invoices');calculateAccounts();alert(num+' created successfully. Financial statements updated.');}
+function addCustomer(){const n=prompt('Customer name:');if(!n)return;const r=document.createElement('tr');r.innerHTML=`<td>${n}</td><td>Not provided</td><td>0</td><td>₹0</td><td><span class="status ok">New</span></td>`;$('customerTable').querySelector('tbody').appendChild(r);alert('Customer added.')}
+function addExpense(){const v=prompt('Expense vendor / category:');if(!v)return;const a=prompt('Amount (₹):','5000');if(!a)return;const r=document.createElement('tr');r.innerHTML=`<td>Today</td><td>${v}</td><td>${v}</td><td>${money(a)}</td><td><span class="status ok">Recorded</span></td>`;$('expenseTable').querySelector('tbody').appendChild(r);calculateAccounts();alert('Expense recorded and financial statements updated.')}
+function runAI(){const r=$('aiResult');r.innerHTML='<b>Analysis complete.</b><br><br>• 3 invoices should be followed up.<br>• INV-1024 has an outstanding balance of ₹38,400.<br>• 2 transactions are recommended for manual review.<br>• Cash collection is currently 92%.<br><br><span class="muted">These are prototype suggestions, not autonomous accounting decisions.</span>'}
+function downloadCSV(){const rows=[['Date','Voucher','Account','Debit','Credit'],['22 Sep','JV-2201','Accounts Receivable','38400',''],['22 Sep','JV-2201','Sales Revenue','','38400']];const blob=new Blob([rows.map(r=>r.join(',')).join('\n')],{type:'text/csv'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='finease-ledger.csv';a.click()}
+window.addEventListener('load',()=>{calculateAccounts();});
 
-      // Chart data
-      const labels = prices.map((_, i) => i);
-      const buyPoints = signals.filter(s => s.type.startsWith('BUY')).map(s => ({ x: s.bar, y: s.price }));
-      const sellPoints = signals.filter(s => s.type.startsWith('SELL')).map(s => ({ x: s.bar, y: s.price }));
-
-      if (chart) chart.destroy();
-
-      const ctx = document.getElementById('priceChart').getContext('2d');
-      chart = new Chart(ctx, {
-        type: 'line',
-        data: {
-          labels,
-          datasets: [
-            {
-              label: 'Price',
-              data: prices,
-              borderColor: '#38bdf8',
-              borderWidth: 2,
-              pointRadius: 0,
-              tension: 0.1
-            },
-            {
-              label: `SMA ${shortP}`,
-              data: shortSMA,
-              borderColor: '#22d3ee',
-              borderWidth: 1.5,
-              pointRadius: 0,
-              borderDash: [4, 4]
-            },
-            {
-              label: `SMA ${longP}`,
-              data: longSMA,
-              borderColor: '#fb923c',
-              borderWidth: 1.5,
-              pointRadius: 0
-            },
-            {
-              label: 'Buy',
-              data: buyPoints,
-              type: 'scatter',
-              backgroundColor: '#22c55e',
-              pointStyle: 'triangle',
-              pointRadius: 8,
-              showLine: false
-            },
-            {
-              label: 'Sell',
-              data: sellPoints,
-              type: 'scatter',
-              backgroundColor: '#ef4444',
-              pointStyle: 'triangle',
-              rotation: 180,
-              pointRadius: 8,
-              showLine: false
-            }
-          ]
-        },
-        options: {
-          responsive: true,
-          interaction: { mode: 'index', intersect: false },
-          plugins: {
-            legend: { labels: { color: '#94a3b8' } },
-            tooltip: {
-              callbacks: {
-                label: ctx => {
-                  if (ctx.dataset.label === 'Buy' || ctx.dataset.label === 'Sell') {
-                    return `${ctx.dataset.label}: ${ctx.parsed.y.toFixed(2)}`;
-                  }
-                  return `${ctx.dataset.label}: ${ctx.parsed.y?.toFixed(2) ?? '—'}`;
-                }
-              }
-            }
-          },
-          scales: {
-            x: {
-              title: { display: true, text: 'Bar', color: '#94a3b8' },
-              ticks: { color: '#64748b' },
-              grid: { color: '#1e293b' }
-            },
-            y: {
-              title: { display: true, text: 'Price', color: '#94a3b8' },
-              ticks: { color: '#64748b' },
-              grid: { color: '#1e293b' }
-            }
-          }
-        }
-      });
-    }
-
-    // Run on load
-    runStrategy();
-  </script>
-</body>
-</html>
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeInvoice();if(e.ctrlKey&&e.key.toLowerCase()==='k'){e.preventDefault();$('globalSearch').focus()}})
+</script></body></html>
